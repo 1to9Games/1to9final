@@ -7,8 +7,8 @@ export default function AppContextProvider({children}){
 
     const [account, setAccount] = useState();
     const [adminAccount, setAdminAccount] = useState();
-    // const url = 'https://oneto9games.onrender.com';
-    const url = 'http://localhost:5000';
+    const url = 'https://oneto9-backend.onrender.com';
+    // const url = 'http://localhost:5000';
 
     const Value={
       account,
