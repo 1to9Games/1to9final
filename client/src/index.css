@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Material Tailwind */
+@import "@material-tailwind/react/tailwind.css";
+.custom-dialog {
+    z-index: 9998; /* Ensure it's below the toast */
+  }

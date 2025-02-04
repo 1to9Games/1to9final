@@ -1,0 +1,277 @@
+import { useContext, useState } from "react";
+import {
+  Button,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Input,
+  Typography,
+} from "@material-tailwind/react";
+import toast from "react-hot-toast";
+import { SocketContext } from "../context/SocketContext";
+import { AppContext } from '../context/AppContext';
+const QRUploadDialog = ({ open, handleOpen }) => {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [ifscCode, setIfscCode] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [imageUrl, setImageUrl] = useState(null);
+  const { socket } = useContext(SocketContext);
+  
+const { url } = useContext(AppContext);
+
+  if (!socket) {
+    console.error("Socket instance is not available");
+  }
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload an image file");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size should be less than 5MB");
+        return;
+      }
+
+      setSelectedFile(file);
+      const fileReader = new FileReader();
+      fileReader.onload = () => {
+        setPreviewUrl(fileReader.result);
+      };
+      fileReader.readAsDataURL(file);
+    }
+  };
+
+  const handleIfscChange = (event) => {
+    setIfscCode(event.target.value.toUpperCase());
+  };
+
+  const handleAccountNumberChange = (event) => {
+    setAccountNumber(event.target.value);
+  };
+
+  const validateIfsc = (ifsc) => {
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+    return ifscRegex.test(ifsc);
+  };
+
+  const validateAccountNumber = (accNum) => {
+    const accNumRegex = /^\d{9,18}$/;
+    return accNumRegex.test(accNum);
+  };
+
+  const updateQRDetails = async (imageUrl, ifscCode, accountNumber) => {
+    try {
+      const response = await fetch(
+        `${url}/api/auth/update-game-qr`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            imageUrl,
+            ifscCode,
+            accountNumber,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update QR details");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  };
+
+  const sendQr = (qrImageUrl) => {
+    socket.emit("QR-Img", {
+      qr: qrImageUrl,
+      ifscCode: ifscCode,
+      accountNumber: accountNumber,
+    });
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      toast.error("Please select a file first");
+      return;
+    }
+
+    if (!ifscCode) {
+      toast.error("Please enter IFSC Code");
+      return;
+    }
+
+    if (!accountNumber) {
+      toast.error("Please enter Account Number");
+      return;
+    }
+
+    if (!validateIfsc(ifscCode)) {
+      toast.error("Please enter a valid IFSC Code");
+      return;
+    }
+
+    if (!validateAccountNumber(accountNumber)) {
+      toast.error("Please enter a valid Account Number (9-18 digits)");
+      return;
+    }
+
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("upload_preset", "DepositQR");
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/dizqoedta/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        const imageUrl = data.secure_url || data.url;
+
+        await updateQRDetails(imageUrl, ifscCode, accountNumber);
+
+        sendQr(imageUrl);
+        setImageUrl(imageUrl);
+
+        toast.success("QR image and bank details updated successfully");
+        handleClose();
+      } else {
+        throw new Error("Failed to upload QR image");
+      }
+    } catch (error) {
+      console.error("Upload Error:", error);
+      toast.error("Failed to update QR details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setIfscCode("");
+    setAccountNumber("");
+    handleOpen(false);
+  };
+
+ 
+  return (
+    <Dialog
+      open={open}
+      handler={handleOpen}
+      animate={{
+        mount: { scale: 1, y: 0 },
+        unmount: { scale: 0.9, y: -100 },
+      }}
+      className="fixed inset-0 z-[999] grid h-[calc(100vh-2rem)] w-full max-w-[98%] sm:max-w-[80%] lg:max-w-[60%] mx-auto overflow-auto"
+    >
+      <div className="flex flex-col h-full overflow-hidden">
+        <DialogHeader className="flex-shrink-0 text-black text-lg sm:text-xl p-4">
+          Upload QR Image
+        </DialogHeader>
+        <DialogBody 
+          className="flex-grow overflow-y-auto p-4 space-y-6"
+          style={{ maxHeight: 'calc(100vh - 200px)' }}
+        >
+          <div className="flex flex-col gap-6">
+            <div className="w-full">
+              <Input
+                type="file"
+                label="Choose QR Image"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="text-black"
+                variant="standard"
+              />
+              <Typography variant="small" className="mt-2 text-gray-400">
+                Supported formats: PNG, JPG, JPEG. Max size: 5MB
+              </Typography>
+            </div>
+
+            <div className="w-full">
+              <Input
+                type="text"
+                label="Enter IFSC Code"
+                value={ifscCode}
+                onChange={handleIfscChange}
+                className="text-black"
+                variant="standard"
+              />
+              <Typography variant="small" className="mt-2 text-gray-400">
+                Format: ABCD0123456 (11 characters)
+              </Typography>
+            </div>
+
+            <div className="w-full">
+              <Input
+                type="text"
+                label="Enter Account Number"
+                value={accountNumber}
+                onChange={handleAccountNumberChange}
+                className="text-black"
+                variant="standard"
+              />
+              <Typography variant="small" className="mt-2 text-gray-400">
+                Format: 9-18 digits
+              </Typography>
+            </div>
+
+            {previewUrl && (
+              <div className="mt-4 max-w-full sm:max-w-[300px] w-full">
+                <Typography variant="h6" className="mb-2 text-black">
+                  Preview
+                </Typography>
+                <img
+                  src={previewUrl}
+                  alt="QR Preview"
+                  className="w-full h-auto rounded-lg border border-gray-500"
+                />
+              </div>
+            )}
+          </div>
+        </DialogBody>
+        <DialogFooter className="flex-shrink-0 flex flex-wrap gap-2 sm:gap-4 p-4">
+          <Button
+            variant="text"
+            color="red"
+            onClick={handleClose}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="gradient"
+            color="green"
+            onClick={handleUpload}
+            disabled={!selectedFile || !ifscCode || !accountNumber || loading}
+            className="bg-green-600 w-full sm:w-auto"
+          >
+            {loading ? "Uploading..." : "Upload"}
+          </Button>
+        </DialogFooter>
+      </div>
+    </Dialog>
+  );
+};
+
+export default QRUploadDialog;
