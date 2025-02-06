@@ -31,6 +31,7 @@ const Admin = () => {
     <div className="w-full z-10 absolute pt-4">
         <AdminNavbar/>
     </div>
+    <br />
     <div className=" pt-[100px]">
         <GameControls/>
     </div>

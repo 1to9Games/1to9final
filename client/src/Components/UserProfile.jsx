@@ -10,7 +10,7 @@ const UserProfile = ({ account, onBack }) => {
   const handleLogout = () => {
     localStorage.removeItem('userData');
     setAccount(null);
-    navigate('/login');
+    navigate('/');
   };
 
   if (!account?.user) return null;
@@ -90,11 +90,6 @@ const UserProfile = ({ account, onBack }) => {
                   <div className="flex items-center gap-2">
                     <span className="text-gray-400 min-w-[80px]">Name:</span>
                     <span className="font-medium text-white">{account.user.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-400 min-w-[80px]">Email:</span>
-                    <span className="font-medium text-white">{account.user.email}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="h-5 w-5 text-gray-400" />

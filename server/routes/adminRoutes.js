@@ -419,6 +419,22 @@ router.put("/admin/draw-number", async (req, res) => {
         });
     }
 
+    const existingGame = await Game.findOne({ gameId: gameId });
+    console.log("Found game:", existingGame);
+
+    if (!existingGame) {
+      return res.status(404).json({ error: "Game not found" });
+    }
+    console.log("Found game:", existingGame.winningNumbers);
+
+    if (existingGame.winningNumbers && (existingGame.winningNumbers[slotNumber-1] !== undefined && existingGame.winningNumbers[slotNumber-1] !== null)) {
+      return res
+        .status(400)
+        .json({
+          error: "Winning number already set for this slot",
+        });
+    }
+
     // Find and update all bets for the specified slot number
     const result = await Bet.updateMany(
       {
@@ -429,11 +445,6 @@ router.put("/admin/draw-number", async (req, res) => {
       { $set: { winningNumber } }
     );
 
-    if (result.modifiedCount === 0) {
-      return res
-        .status(404)
-        .json({ error: "No pending bets found for the specified slot number" });
-    }
 
     res.status(200).json({
       message: "Winning number updated successfully",
