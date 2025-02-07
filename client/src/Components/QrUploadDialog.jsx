@@ -7,6 +7,9 @@ import {
   DialogFooter,
   Input,
   Typography,
+  Tabs,
+  TabsHeader,
+  Tab,
 } from "@material-tailwind/react";
 import toast from "react-hot-toast";
 import { SocketContext } from "../context/SocketContext";
@@ -17,6 +20,7 @@ const QRUploadDialog = ({ open, handleOpen }) => {
   const [loading, setLoading] = useState(false);
   const [ifscCode, setIfscCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
+  const [selectedAccount, setSelectedAccount] = useState("account1");
   const [imageUrl, setImageUrl] = useState(null);
   const { socket } = useContext(SocketContext);
   
@@ -66,23 +70,54 @@ const { url } = useContext(AppContext);
     return accNumRegex.test(accNum);
   };
 
-  const updateQRDetails = async (imageUrl, ifscCode, accountNumber) => {
+  const updateDetails = async ( ifscCode, accountNumber) => {
     try {
+      console.log("sent in backend")
       const response = await fetch(
-        `${url}/api/auth/update-game-qr`,
+        `${url}/api/auth/update-game-details`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
+
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            imageUrl,
+            selectedAccount,
             ifscCode,
             accountNumber,
           }),
         }
       );
+  
+      const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update QR details");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  };
+  const updateQROnly = async (imageUrl) => {
+    try {
+      console.log("sent in backend qr only")
+      const response = await fetch(
+        `${url}/api/auth/update-game-qr-only`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            imageUrl,
+            selectedAccount,
+          }),
+        }
+      );
+  
       const data = await response.json();
 
       if (!response.ok) {
@@ -101,14 +136,60 @@ const { url } = useContext(AppContext);
       qr: qrImageUrl,
       ifscCode: ifscCode,
       accountNumber: accountNumber,
+      selectedAccount: selectedAccount,
+    });
+  };
+  const sendQrONly = (qrImageUrl) => {
+    socket.emit("QR-only", {
+      qr: qrImageUrl,
+      selectedAccount: selectedAccount,
     });
   };
 
-  const handleUpload = async () => {
+  const handleUploadQROnly = async () => {
     if (!selectedFile) {
       toast.error("Please select a file first");
       return;
     }
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("upload_preset", "DepositQR");
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/dizqoedta/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        const imageUrl = data.secure_url || data.url;
+
+        await updateQROnly(imageUrl);
+        sendQrONly(imageUrl);
+        setImageUrl(imageUrl);
+        console.log("sent in socket qr only")
+
+
+        toast.success("QR image and bank details updated successfully");
+        handleClose();
+      } else {
+        throw new Error("Failed to upload QR image");
+      }
+    } catch (error) {
+      console.error("Upload Error:", error);
+      toast.error("Failed to update QR details");
+    } finally {
+      setLoading(false);
+    }
+
+  }
+
+
+  const handleUpload = async () => {
 
     if (!ifscCode) {
       toast.error("Please enter IFSC Code");
@@ -135,35 +216,19 @@ const { url } = useContext(AppContext);
     formData.append("file", selectedFile);
     formData.append("upload_preset", "DepositQR");
 
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/dizqoedta/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-      const data = await response.json();
+   
 
-      if (response.ok) {
-        const imageUrl = data.secure_url || data.url;
-
-        await updateQRDetails(imageUrl, ifscCode, accountNumber);
+    await updateDetails( ifscCode, accountNumber);
+        console.log("updeted succcessfully in backend")
 
         sendQr(imageUrl);
-        setImageUrl(imageUrl);
+        console.log("sent in socket")
 
-        toast.success("QR image and bank details updated successfully");
+        toast.success("Bank details updated successfully");
         handleClose();
-      } else {
-        throw new Error("Failed to upload QR image");
-      }
-    } catch (error) {
-      console.error("Upload Error:", error);
-      toast.error("Failed to update QR details");
-    } finally {
-      setLoading(false);
-    }
+       setLoading(false);
+    
+
   };
 
   const handleClose = () => {
@@ -176,24 +241,41 @@ const { url } = useContext(AppContext);
 
  
   return (
-    <Dialog
-      open={open}
-      handler={handleOpen}
-      animate={{
-        mount: { scale: 1, y: 0 },
-        unmount: { scale: 0.9, y: -100 },
-      }}
-      className="fixed inset-0 z-[999] grid h-[calc(100vh-2rem)] w-full max-w-[98%] sm:max-w-[80%] lg:max-w-[60%] mx-auto overflow-auto"
-    >
-      <div className="flex flex-col h-full overflow-hidden">
-        <DialogHeader className="flex-shrink-0 text-black text-lg sm:text-xl p-4">
-          Upload QR Image
-        </DialogHeader>
-        <DialogBody 
-          className="flex-grow overflow-y-auto p-4 space-y-6"
-          style={{ maxHeight: 'calc(100vh - 200px)' }}
-        >
-          <div className="flex flex-col gap-6">
+    <Dialog open={open} handler={handleOpen}
+    animate={{
+      mount: { scale: 1, y: 0 },
+      unmount: { scale: 0.9, y: -100 },
+    }}
+    className="fixed inset-0 z-[999] grid h-[calc(100vh-2rem)] w-full max-w-[98%] sm:max-w-[80%] lg:max-w-[60%] mx-auto overflow-auto"
+  >
+    <div className="flex flex-col h-full overflow-hidden">
+      <DialogHeader className="flex-shrink-0 text-black text-lg sm:text-xl p-4">
+        Update Account Details
+      </DialogHeader>
+
+      <div className="px-4">
+        <Tabs value={selectedAccount} className="w-full">
+          <TabsHeader>
+            <Tab value="account1" onClick={() => setSelectedAccount("account1")}>
+              Account 1
+            </Tab>
+            <Tab value="account2" onClick={() => setSelectedAccount("account2")}>
+              Account 2
+            </Tab>
+          </TabsHeader>
+        </Tabs>
+      </div>
+
+      <DialogBody 
+        className="flex-grow overflow-y-auto p-4 space-y-6"
+        style={{ maxHeight: 'calc(100vh - 200px)' }}
+      >
+        <div className="flex flex-col gap-6">
+          {/* QR Upload Section */}
+          <div className="border-b pb-6">
+            <Typography variant="h6" className="text-black mb-4">
+              Update QR Image
+            </Typography>
             <div className="w-full">
               <Input
                 type="file"
@@ -205,34 +287,6 @@ const { url } = useContext(AppContext);
               />
               <Typography variant="small" className="mt-2 text-gray-400">
                 Supported formats: PNG, JPG, JPEG. Max size: 5MB
-              </Typography>
-            </div>
-
-            <div className="w-full">
-              <Input
-                type="text"
-                label="Enter IFSC Code"
-                value={ifscCode}
-                onChange={handleIfscChange}
-                className="text-black"
-                variant="standard"
-              />
-              <Typography variant="small" className="mt-2 text-gray-400">
-                Format: ABCD0123456 (11 characters)
-              </Typography>
-            </div>
-
-            <div className="w-full">
-              <Input
-                type="text"
-                label="Enter Account Number"
-                value={accountNumber}
-                onChange={handleAccountNumberChange}
-                className="text-black"
-                variant="standard"
-              />
-              <Typography variant="small" className="mt-2 text-gray-400">
-                Format: 9-18 digits
               </Typography>
             </div>
 
@@ -248,29 +302,78 @@ const { url } = useContext(AppContext);
                 />
               </div>
             )}
+            <Button
+              variant="gradient"
+              color="blue"
+              onClick={handleUploadQROnly}
+              disabled={loading}
+              className="w-full sm:w-auto"
+            >
+
+              {loading ? "Updating QR..." : "Update QR"}
+            </Button>
           </div>
-        </DialogBody>
-        <DialogFooter className="flex-shrink-0 flex flex-wrap gap-2 sm:gap-4 p-4">
-          <Button
-            variant="text"
-            color="red"
-            onClick={handleClose}
-            className="w-full sm:w-auto"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="gradient"
-            color="green"
-            onClick={handleUpload}
-            disabled={!selectedFile || !ifscCode || !accountNumber || loading}
-            className="bg-green-600 w-full sm:w-auto"
-          >
-            {loading ? "Uploading..." : "Upload"}
-          </Button>
-        </DialogFooter>
-      </div>
-    </Dialog>
+          {/* Bank Details Section */}
+          <div>
+
+            <Typography variant="h6" className="text-black mb-4">
+              Update Bank Details
+            </Typography>
+            <div className="space-y-4">
+              <div className="w-full">
+                <Input
+                  type="text"
+                  label="Enter IFSC Code"
+                  value={ifscCode}
+                  onChange={handleIfscChange}
+                  className="text-black"
+                  variant="standard"
+                />
+                <Typography variant="small" className="mt-2 text-gray-400">
+                  Format: ABCD0123456 (11 characters)
+                </Typography>
+              </div>
+
+              <div className="w-full">
+                <Input
+                  type="text"
+                  label="Enter Account Number"
+                  value={accountNumber}
+                  onChange={handleAccountNumberChange}
+                  className="text-black"
+                  variant="standard"
+                />
+                <Typography variant="small" className="mt-2 text-gray-400">
+                  Format: 9-18 digits
+                </Typography>
+              </div>
+
+              <Button
+                variant="gradient"
+                color="blue"
+                onClick={handleUpload}
+                disabled={(!ifscCode && !accountNumber) || loading}
+                className="w-full sm:w-auto"
+              >
+                {loading ? "Updating Details..." : "Update Details"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogBody>
+
+      <DialogFooter className="flex-shrink-0 p-4">
+        <Button
+          variant="text"
+          color="red"
+          onClick={handleClose}
+          className="w-full sm:w-auto"
+        >
+          Close
+        </Button>
+      </DialogFooter>
+    </div>
+  </Dialog>
   );
 };
 

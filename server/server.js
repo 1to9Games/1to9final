@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
 const bodyParser = require('body-parser');
 const userRoutes = require('./routes/userRoutes');
 const betRoutes = require('./routes/betRoutes')
@@ -35,17 +34,6 @@ app.use('/api/auth', betRoutes);
 app.use('/api/auth', adminRoutes);
 app.use('/api/auth', gameRoutes);
 
-
-// Serve static files from the React/Vite app
-app.use(express.static(path.join(__dirname, '../client/dist')));
-
-// Handle client-side routing - this should come after API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
-
-
-
 // Store active viewers count in memory
 let activeViewers = Math.floor(Math.random() * (10000 - 1000 + 1)) + 1000;
 
@@ -59,7 +47,14 @@ io.on('connection', (socket) => {
     io.emit('qrData', {
       qr: data.qr,
       ifscCode: data.ifscCode,
-      accountNumber: data.accountNumber
+      accountNumber: data.accountNumber,
+      selectedAccount: data.selectedAccount
+    });
+  });
+  socket.on('QR-only', (data) => {
+    io.emit('qrData-only', {
+      qr: data.qr,
+      selectedAccount: data.selectedAccount
     });
   });
 

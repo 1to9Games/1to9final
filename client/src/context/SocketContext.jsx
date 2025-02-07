@@ -15,9 +15,12 @@ const getRandomViewers = () => {
 export const SocketProvider = ({ children }) => {
   const [WinNum, setWinNum] = useState(0);
   const [slotNum, setSlotNum] = useState(0);
-  const [imgUrl, setImgUrl] = useState(null);
-  const [ifscCode, setIfscCode] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
+  const [imgUrl1, setImgUrl1] = useState(null);
+  const [imgUrl2, setImgUrl2] = useState(null);
+  const [ifscCode1, setIfscCode1] = useState('');
+  const [ifscCode2, setIfscCode2] = useState('');
+  const [accountNumber1, setAccountNumber1] = useState('');
+  const [accountNumber2, setAccountNumber2] = useState('');
   const [activeViewers, setActiveViewers] = useState(getRandomViewers());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,14 +39,18 @@ export const SocketProvider = ({ children }) => {
         
         const data = await response.json();
         
-        setImgUrl(data.imageUrl);
-        setIfscCode(data.ifscCode);
-        setAccountNumber(data.accountNumber);
+        setImgUrl1(data.imageUrl1);
+        setIfscCode1(data.ifscCode1);
+        setAccountNumber1(data.accountNumber1);
+        setImgUrl2(data.imageUrl2);
+        setIfscCode2(data.ifscCode2);
+        setAccountNumber2(data.accountNumber2);
       } catch (err) {
         setError(err.message);
       } finally {
         setIsLoading(false);
       }
+
     };
 
     fetchInitialData();
@@ -52,10 +59,30 @@ export const SocketProvider = ({ children }) => {
   // Socket event listeners
   useEffect(() => {
     socket.on('qrData', (data) => {
-      setImgUrl(data.qr);
-      setIfscCode(data.ifscCode);
-      setAccountNumber(data.accountNumber);
+      if(data.selectedAccount === 'account1'){
+        setImgUrl1(data.qr);
+        setIfscCode1(data.ifscCode);
+        setAccountNumber1(data.accountNumber);
+      }else if(data.selectedAccount === 'account2'){
+        setImgUrl2(data.qr);
+        setIfscCode2(data.ifscCode);
+        setAccountNumber2(data.accountNumber);
+      }
+      console.log("recieved in socket")
     });
+
+
+    socket.on('qrData-only', (data) => {
+      if(data.selectedAccount === 'account1'){
+        setImgUrl1(data.qr);
+      }else if(data.selectedAccount === 'account2'){
+
+        setImgUrl2(data.qr);
+      }
+      console.log("recieved in socket qr only")
+    });
+
+
 
     socket.on('NumWon', (winN, slotN) => {
       setWinNum(winN);
@@ -92,14 +119,14 @@ export const SocketProvider = ({ children }) => {
   return (
     <SocketContext.Provider value={{ 
       socket, 
-      imgUrl, 
-      setImgUrl, 
+      imgUrl1,
+      imgUrl2,
+      ifscCode1,
+      ifscCode2,
+      accountNumber1,
+      accountNumber2,
       WinNum, 
       slotNum,
-      ifscCode,
-      setIfscCode,
-      accountNumber,
-      setAccountNumber,
       activeViewers,
       setActiveViewers,
       isLoading,

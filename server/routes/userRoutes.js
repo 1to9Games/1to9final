@@ -267,9 +267,6 @@ router.post('/deposit', async (req, res) => {
       depositAmount,
       transactionId,
       proofImgUrl,
-      method,
-      upiId,
-      bankDetails
     } = req.body;
 
     // Check if user exists
@@ -288,44 +285,15 @@ router.post('/deposit', async (req, res) => {
       return res.status(400).json({ message: 'Please fill all required fields including screenshot' });
     }
 
-    // Method specific validations
-    if (method === 'QR/UPI') {
-      if (!upiId) {
-        return res.status(400).json({ message: 'UPI ID is required for UPI transactions' });
-      }
-      // Validate UPI ID format
-      const upiRegex = /^[\w\.\-_]+@[\w\-]+$/i;
-      if (!upiRegex.test(upiId)) {
-        return res.status(400).json({ message: 'Invalid UPI ID format' });
-      }
-    } else if (method === 'Bank Transfer') {
-      if (!bankDetails || !bankDetails.accountHolderName || !bankDetails.bankName || 
-          !bankDetails.accountNumber || !bankDetails.senderAccountNumber || !bankDetails.ifscCode) {
-        return res.status(400).json({ message: 'All bank details are required for bank transfers' });
-      }
-      // Validate account numbers
-      const accountNumberRegex = /^\d{9,18}$/;
-      if (!accountNumberRegex.test(bankDetails.accountNumber) || 
-          !accountNumberRegex.test(bankDetails.senderAccountNumber)) {
-        return res.status(400).json({ message: 'Invalid account number format' });
-      }
-      // Validate IFSC code
-      const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-      if (!ifscRegex.test(bankDetails.ifscCode)) {
-        return res.status(400).json({ message: 'Invalid IFSC code format' });
-      }
-    }
-
     // Create deposit request
-    const deposit = await Deposit.create({
+    const deposit = new Deposit({
       userId,
       depositAmount,
       transactionId,
       proofImgUrl,
-      method,
-      upiId: method === 'QR/UPI' ? upiId : undefined,
-      bankDetails: method === 'Bank Transfer' ? bankDetails : undefined
     });
+
+    await deposit.save();
 
     // Send response
     res.status(201).json({

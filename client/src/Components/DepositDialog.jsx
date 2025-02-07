@@ -111,9 +111,6 @@ const DepositDialog = ({ open, setOpen }) => {
             Amount: ₹{deposit.depositAmount}
           </Typography>
           <Typography variant="small" color="gray">
-            Payment Mode: {deposit.method === 'QR/UPI' ? 'UPI' : 'Bank Transfer'}
-          </Typography>
-          <Typography variant="small" color="gray">
             Transaction ID: {deposit.transactionId}
           </Typography>
           <Typography variant="small" color="gray">
@@ -143,29 +140,6 @@ const DepositDialog = ({ open, setOpen }) => {
       </>
     );
 
-    const upiDetails = deposit.method === 'QR/UPI' && (
-      <Typography variant="small" color="gray">
-        UPI ID: {deposit.upiId}
-      </Typography>
-    );
-
-    const bankDetails = deposit.paymentMode === 'bankTransfer' && (
-      <>
-        <Typography variant="small" color="gray">
-          Account Holder: {deposit.bankDetails?.accountHolderName}
-        </Typography>
-        <Typography variant="small" color="gray">
-          Bank Name: {deposit.bankDetails?.bankName}
-        </Typography>
-        <Typography variant="small" color="gray">
-          Account No: {deposit.bankDetails?.accountNumber}
-        </Typography>
-        <Typography variant="small" color="gray">
-          IFSC Code: {deposit.bankDetails?.ifscCode}
-        </Typography>
-      </>
-    );
-
     const handleImageClick = (deposit) => {
       setSelectedImage(deposit.proofImgUrl);
     };
@@ -174,10 +148,6 @@ const DepositDialog = ({ open, setOpen }) => {
       <Card className="w-full">
         <CardBody>
           {commonDetails}
-          <div className="mt-2 space-y-1">
-            {upiDetails}
-            {bankDetails}
-          </div>
           {deposit.proofImgUrl && (
             <div className="mt-3">
               <Typography variant="small" color="gray" className="mb-2">

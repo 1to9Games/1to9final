@@ -1,63 +1,72 @@
-import { useContext, useState, useEffect } from 'react';
-import { SocketContext } from '../context/SocketContext';
-import { AppContext } from '../context/AppContext';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useContext, useState, useEffect } from "react";
+import { SocketContext } from "../context/SocketContext";
+import { AppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { Tab, Tabs, TabsHeader } from "@material-tailwind/react";
 
 const DepositSection = () => {
-  const { imgUrl, ifscCode, accountNumber } = useContext(SocketContext);
-  const { account,url } = useContext(AppContext);
-  const [selectedMethod, setSelectedMethod] = useState('QR/UPI');
-  const [depositAmount, setDepositAmount] = useState('');
-  const [transactionId, setTransactionId] = useState('');
+  const {
+    imgUrl1,
+    ifscCode1,
+    accountNumber1,
+    imgUrl2,
+    ifscCode2,
+    accountNumber2,
+  } = useContext(SocketContext);
+  const { account, url } = useContext(AppContext);
+  const [selectedMethod, setSelectedMethod] = useState("QR/UPI");
+  const [selectedAccount, setSelectedAccount] = useState("account1");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [transactionId, setTransactionId] = useState("");
   const [screenshot, setScreenshot] = useState(null);
-  const [screenshotUrl, setScreenshotUrl] = useState('');
-  const [senderAccountNumber, setSenderAccountNumber] = useState('');
+  const [screenshotUrl, setScreenshotUrl] = useState("");
+  const [senderAccountNumber, setSenderAccountNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!account) navigate('/login');
+    if (!account) navigate("/login");
   }, [account, navigate]);
 
   const handleScreenshotChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('File size should be less than 2MB');
+      toast.error("File size should be less than 2MB");
       return;
     }
 
     setScreenshot(file);
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'DepositQR');
+    formData.append("file", file);
+    formData.append("upload_preset", "DepositQR");
 
     try {
       setIsLoading(true);
       const response = await fetch(
-        'https://api.cloudinary.com/v1_1/dizqoedta/image/upload',
+        "https://api.cloudinary.com/v1_1/dizqoedta/image/upload",
         {
-          method: 'POST',
+          method: "POST",
           body: formData,
         }
       );
       const data = await response.json();
       if (response.ok) {
         setScreenshotUrl(data.secure_url || data.url);
-        toast.success('Screenshot uploaded successfully');
+        toast.success("Screenshot uploaded successfully");
       } else {
-        throw new Error('Failed to upload image');
+        throw new Error("Failed to upload image");
       }
     } catch (error) {
-      console.error('Upload Error:', error);
-      toast.error('Failed to upload image');
+      console.error("Upload Error:", error);
+      toast.error("Failed to upload image");
     } finally {
       setIsLoading(false);
     }
@@ -68,12 +77,12 @@ const DepositSection = () => {
 
     try {
       if (!depositAmount || !transactionId || !screenshotUrl) {
-        toast.error('Please fill in all required fields including screenshot');
+        toast.error("Please fill in all required fields including screenshot");
         return;
       }
 
       if (depositAmount < 100) {
-        toast.error('Minimum deposit amount is ₹100');
+        toast.error("Minimum deposit amount is ₹100");
         return;
       }
 
@@ -81,48 +90,14 @@ const DepositSection = () => {
         userId: account.user._id,
         depositAmount: Number(depositAmount),
         transactionId,
-        method: selectedMethod,
         proofImgUrl: screenshotUrl,
       };
-      if (selectedMethod === 'QR/UPI') {
-        const upiId = "1234567890@paytm";
-        
-        if (!imgUrl) {
-          toast.error('Payment QR details are not loaded. Please refresh the page or try again later.');
-          return;
-        }
-        
-        if (!upiId) {
-          toast.error('UPI ID is not available. Please try bank transfer or contact support.');
-          return;
-        }
-
-        depositData.upiId = upiId;
-      } else if (selectedMethod === 'Bank Transfer') {
-        if (!senderAccountNumber) {
-          toast.error('Please enter your account number');
-          return;
-        }
-        if (!accountNumber || !ifscCode) {
-          toast.error('Bank details are not available. Please refresh the page or try again later.');
-          return;
-        }
-
-        depositData.bankDetails = {
-          accountHolderName: account.user.name,
-          bankName: 'User Bank',
-          senderAccountNumber,
-          accountNumber: accountNumber,
-          ifscCode: ifscCode
-        };
-      }
-
-       setIsSubmitting(true);
+      setIsSubmitting(true);
 
       const response = await fetch(`${url}/api/auth/deposit`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(depositData),
       });
@@ -130,25 +105,61 @@ const DepositSection = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(data.message || 'Deposit request submitted successfully');
-        
+        toast.success(data.message || "Deposit request submitted successfully");
+
         // Clear all input fields
-        setDepositAmount('');
-        setTransactionId('');
+        setDepositAmount("");
+        setTransactionId("");
         setScreenshot(null);
-        setScreenshotUrl('');
-        setSenderAccountNumber('');
-        
+        setScreenshotUrl("");
+        setSenderAccountNumber("");
       } else {
-        throw new Error(data.message || 'Failed to submit deposit request');
+        throw new Error(data.message || "Failed to submit deposit request");
       }
     } catch (error) {
-      console.error('Deposit Error:', error);
-      toast.error(error.message || 'Failed to process deposit');
+      console.error("Deposit Error:", error);
+      toast.error(error.message || "Failed to process deposit");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const renderAccountDetails = (accountNumber, ifscCode, qrUrl) => (
+    <div className="space-y-4">
+      {console.log(selectedAccount)}
+      <div className="w-full max-w-xs mx-auto mb-6">
+        {qrUrl ? (
+          <div className="w-48 h-48 md:w-64 md:h-64 mx-auto bg-white/10 rounded-lg overflow-hidden backdrop-blur-sm border border-gray-600">
+            <img
+              src={qrUrl}
+              alt="Payment QR Code"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        ) : (
+          <div className="w-48 h-48 md:w-64 md:h-64 mx-auto bg-black/50 rounded-lg border border-gray-600 flex items-center justify-center">
+            <p className="text-gray-400 text-center px-4">QR Code not available</p>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <div className="p-3 md:p-4 bg-black/50 rounded-lg border border-gray-600">
+          <p className="text-xs md:text-sm text-gray-300">Account Number</p>
+          <p className="text-sm md:text-base text-white font-medium">
+            {accountNumber || 'Not available'}
+          </p>
+        </div>
+        <div className="p-3 md:p-4 bg-black/50 rounded-lg border border-gray-600">
+          <p className="text-xs md:text-sm text-gray-300">IFSC Code</p>
+          <p className="text-sm md:text-base text-white font-medium">
+            {ifscCode || 'Not available'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
 
   return (
     <div className="w-full bg-black/20 backdrop-blur-sm p-4 md:p-6 rounded-lg">
@@ -157,98 +168,53 @@ const DepositSection = () => {
           Deposit Funds
         </h2>
         <p className="text-sm md:text-base text-gray-300">
-          Select your preferred deposit method
+          Select your preferred account for deposit
         </p>
       </div>
 
       <div className="flex justify-center space-x-2 md:space-x-4 mb-6">
-        <button
-          type="button"
-          className={`px-4 md:px-6 py-2 rounded-lg text-sm md:text-base transition duration-200 ${
-            selectedMethod === 'QR/UPI'
-              ? 'bg-red-900/85 text-white'
-              : 'bg-black/50 text-gray-300 hover:bg-red-900/50'
-          }`}
-          onClick={() => setSelectedMethod('QR/UPI')}
+      <Tabs value={selectedAccount} className="w-full">
+      <TabsHeader
+        className="bg-black/50 rounded-lg"
+
+        indicatorProps={{
+          className: "bg-red-900/85 rounded-lg",
+        }}
+      >
+        <Tab 
+          value="account1"
+          onClick={() => setSelectedAccount("account1")}
+          className="text-gray-300 hover:text-white"
         >
-          QR/UPI
-        </button>
-        <button
-          type="button"
-          className={`px-4 md:px-6 py-2 rounded-lg text-sm md:text-base transition duration-200 ${
-            selectedMethod === 'Bank Transfer'
-              ? 'bg-red-900/85 text-white'
-              : 'bg-black/50 text-gray-300 hover:bg-red-900/50'
-          }`}
-          onClick={() => setSelectedMethod('Bank Transfer')}
+          Account 1
+        </Tab>
+        <Tab 
+          value="account2"
+          onClick={() => setSelectedAccount("account2")}
+          className="text-gray-300 hover:text-white"
         >
-          Bank Transfer
-        </button>
+          Account 2
+        </Tab>
+      </TabsHeader>
+    </Tabs>
       </div>
 
-      {selectedMethod === 'QR/UPI' && (
-        <div className="mb-6">
-          <h3 className="text-lg md:text-xl font-semibold text-white mb-4 text-center">
-            QR Code / UPI
-          </h3>
-          {imgUrl ? (
-            <div className="w-48 h-48 md:w-64 md:h-64 mx-auto bg-white/10 rounded-lg overflow-hidden backdrop-blur-sm border border-gray-600">
-              <img
-                src={imgUrl.qr || imgUrl}
-                alt="Payment QR Code"
-                className="w-full h-full object-contain"
-              />
-            </div>
-          ) : (
-            <p className="text-red-500 text-center">QR code is not available at this moment.</p>
-          )}
-          
-        </div>
-      )}
+      <div className="mb-6">
+        {selectedAccount === "account1"
+          ? renderAccountDetails(accountNumber1, ifscCode1, imgUrl1)
+          : renderAccountDetails(accountNumber2, ifscCode2, imgUrl2)}
+      </div>
 
-      {selectedMethod === 'Bank Transfer' && (
-        <div className="mb-6">
-          <h3 className="text-lg md:text-xl font-semibold text-white mb-4 text-center">
-            Bank Transfer Details
-          </h3>
-          {accountNumber && ifscCode ? (
-            <div className="space-y-3 md:space-y-4">
-              <div className="p-3 md:p-4 bg-black/50 rounded-lg border border-gray-600">
-                <p className="text-xs md:text-sm text-gray-300">Account Number</p>
-                <p className="text-sm md:text-base text-white font-medium">{accountNumber}</p>
-              </div>
-              <div className="p-3 md:p-4 bg-black/50 rounded-lg border border-gray-600">
-                <p className="text-xs md:text-sm text-gray-300">IFSC Code</p>
-                <p className="text-sm md:text-base text-white font-medium">{ifscCode}</p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-red-500 text-center">Bank details are not available at this moment.</p>
-          )}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmitDeposit} className="space-y-4 md:space-y-6">
+     <form onSubmit={handleSubmitDeposit} className="space-y-4 md:space-y-6">
         <input
           type="number"
           placeholder="Deposit Amount (₹)"
           value={depositAmount}
           onChange={(e) => setDepositAmount(e.target.value)}
-          min="20"
+          min="100"
           required
           className="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base rounded-lg bg-black/50 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-900 focus:border-transparent"
         />
-
-        {selectedMethod === 'Bank Transfer' && (
-          <input
-            type="text"
-            placeholder="Your Account Number"
-            value={senderAccountNumber}
-            onChange={(e) => setSenderAccountNumber(e.target.value)}
-            required
-            className="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base rounded-lg bg-black/50 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-900 focus:border-transparent"
-          />
-        )}
 
         <input
           type="text"
