@@ -115,6 +115,12 @@ router.post("/withdrawal/banktransfer", async (req, res) => {
     // Save to database
     const savedRequest = await withdrawalRequest.save();
 
+    // Deduct the withdrawal amount from the user's balance
+    user.balance -= withdrawalRequest.withdrawalAmount;
+
+    // Save the updated user
+    await user.save();
+
     res.status(201).json({
       message: "Withdrawal request created successfully",
       withdrawal: savedRequest,
@@ -171,6 +177,12 @@ router.post("/withdrawal/upitransaction", async (req, res) => {
     // Save to database
     const savedRequest = await withdrawalRequest.save();
 
+     // Deduct the withdrawal amount from the user's balance
+     user.balance -= withdrawalRequest.withdrawalAmount;
+
+     // Save the updated user
+     await user.save();
+
     res.status(201).json({
       message: "Withdrawal request created successfully",
       withdrawal: savedRequest,
@@ -226,8 +238,18 @@ router.post("/withdrawal/:withdrawalReqId/rejected", async (req, res) => {
     withdrawalRequest.status = "rejected";
     withdrawalRequest.rejectedAt = new Date();
 
+
+    const user = await User.findById(withdrawalRequest.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // add the withdrawal amount from the user's balance
+    user.balance += withdrawalRequest.withdrawalAmount;
+
     // Save the updated user and withdrawal request
-    // await user.save();
+    await user.save();
     await withdrawalRequest.save();
 
     res.status(200).json({
@@ -263,32 +285,31 @@ router.post("/withdrawal/:withdrawalReqId/approved", async (req, res) => {
         .json({ message: "Withdrawal request has already been processed" });
     }
 
-    // Find the user associated with the withdrawal request
-    const user = await User.findById(withdrawalRequest.userId);
+    // // Find the user associated with the withdrawal request
+    // const user = await User.findById(withdrawalRequest.userId);
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    // if (!user) {
+    //   return res.status(404).json({ message: "User not found" });
+    // }
 
-    // Check if the user has sufficient balance
-    if (user.balance < withdrawalRequest.withdrawalAmount) {
-      return res.status(400).json({ message: "Insufficient balance" });
-    }
+    // // Check if the user has sufficient balance
+    // if (user.balance < withdrawalRequest.withdrawalAmount) {
+    //   return res.status(400).json({ message: "Insufficient balance" });
+    // }
 
-    // Deduct the withdrawal amount from the user's balance
-    user.balance -= withdrawalRequest.withdrawalAmount;
+    // // Deduct the withdrawal amount from the user's balance
+    // user.balance -= withdrawalRequest.withdrawalAmount;
 
     // Update the withdrawal request status to 'approved'
     withdrawalRequest.status = "approved";
     withdrawalRequest.approvedAt = new Date();
 
     // Save the updated user and withdrawal request
-    await user.save();
+    // await user.save();
     await withdrawalRequest.save();
 
     res.status(200).json({
       message: "Withdrawal request approved successfully",
-      user,
       withdrawalRequest,
     });
   } catch (error) {
