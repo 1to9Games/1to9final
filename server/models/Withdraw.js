@@ -26,16 +26,6 @@ const withdrawalSchema = new mongoose.Schema({
     required: function() {
       return this.paymentMode === 'upiTransaction';
     },
-    validate: {
-      validator: function(v) {
-        if (this.paymentMode === 'upiTransaction') {
-          // Basic UPI ID validation regex
-          return /^[\w\.\-_]+@[\w\-]+$/i.test(v);
-        }
-        return true;
-      },
-      message: 'Please enter a valid UPI ID'
-    }
   },
   // Bank Transfer Fields
   bankDetails: {
@@ -56,32 +46,12 @@ const withdrawalSchema = new mongoose.Schema({
       required: function() {
         return this.paymentMode === 'bankTransfer';
       },
-      validate: {
-        validator: function(v) {
-          if (this.paymentMode === 'bankTransfer') {
-            // Basic account number validation (allows only digits)
-            return /^\d{9,18}$/.test(v);
-          }
-          return true;
-        },
-        message: 'Please enter a valid account number'
-      }
     },
     ifscCode: {
       type: String,
       required: function() {
         return this.paymentMode === 'bankTransfer';
       },
-      validate: {
-        validator: function(v) {
-          if (this.paymentMode === 'bankTransfer') {
-            // IFSC code validation regex
-            return /^[A-Z]{4}0[A-Z0-9]{6}$/.test(v);
-          }
-          return true;
-        },
-        message: 'Please enter a valid IFSC code'
-      }
     }
   },
   status: {

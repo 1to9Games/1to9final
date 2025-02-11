@@ -104,7 +104,7 @@ const DepositDialog = ({ open, setOpen }) => {
     const commonDetails = (
       <>
         <Typography variant="h6" color="blue-gray">
-          {deposit.username}
+          {deposit.name}
         </Typography>
         <div className="mt-2 space-y-1">
           <Typography variant="small" color="gray">

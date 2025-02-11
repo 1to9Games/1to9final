@@ -4,6 +4,7 @@ import { AppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Tab, Tabs, TabsHeader } from "@material-tailwind/react";
+import { X } from "lucide-react";
 
 const DepositSection = () => {
   const {
@@ -24,11 +25,27 @@ const DepositSection = () => {
   const [senderAccountNumber, setSenderAccountNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showZoomedQR, setShowZoomedQR] = useState(false);
+  const [zoomedQRUrl, setZoomedQRUrl] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!account) navigate("/login");
   }, [account, navigate]);
+
+  const handleQRClick = (qrUrl) => {
+    setZoomedQRUrl(qrUrl);
+    setShowZoomedQR(true);
+    // Prevent body scrolling when modal is open
+
+  };
+
+  const handleCloseZoom = () => {
+    setShowZoomedQR(false);
+    setZoomedQRUrl("");
+    // Restore body scrolling
+    document.body.style.overflow = 'unset';
+  };
 
   const handleScreenshotChange = async (e) => {
     const file = e.target.files[0];
@@ -88,6 +105,7 @@ const DepositSection = () => {
 
       const depositData = {
         userId: account.user._id,
+        name: account.user.name,
         depositAmount: Number(depositAmount),
         transactionId,
         proofImgUrl: screenshotUrl,
@@ -106,8 +124,6 @@ const DepositSection = () => {
 
       if (response.ok) {
         toast.success(data.message || "Deposit request submitted successfully");
-
-        // Clear all input fields
         setDepositAmount("");
         setTransactionId("");
         setScreenshot(null);
@@ -126,14 +142,16 @@ const DepositSection = () => {
 
   const renderAccountDetails = (accountNumber, ifscCode, qrUrl) => (
     <div className="space-y-4">
-      {console.log(selectedAccount)}
       <div className="w-full max-w-xs mx-auto mb-6">
         {qrUrl ? (
-          <div className="w-48 h-48 md:w-64 md:h-64 mx-auto bg-white/10 rounded-lg overflow-hidden backdrop-blur-sm border border-gray-600">
+          <div 
+            className="w-48 h-48 md:w-64 md:h-64 mx-auto bg-white/10 rounded-lg overflow-hidden backdrop-blur-sm border border-gray-600 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-900/20"
+            onClick={() => handleQRClick(qrUrl)}
+          >
             <img
               src={qrUrl}
               alt="Payment QR Code"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain p-2"
             />
           </div>
         ) : (
@@ -160,52 +178,51 @@ const DepositSection = () => {
     </div>
   );
 
-
   return (
-    <div className="w-full bg-black/20 backdrop-blur-sm p-4 md:p-6 rounded-lg">
-      <div className="mb-4 md:mb-6">
-        <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
-          Deposit Funds
-        </h2>
-        <p className="text-sm md:text-base text-gray-300">
-          Select your preferred account for deposit
-        </p>
-      </div>
+    <>
+      <div className="w-full bg-black/20 backdrop-blur-sm p-4 md:p-6 rounded-lg">
+        <div className="mb-4 md:mb-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
+            Deposit Funds
+          </h2>
+          <p className="text-sm md:text-base text-gray-300">
+            Select your preferred account for deposit
+          </p>
+        </div>
 
-      <div className="flex justify-center space-x-2 md:space-x-4 mb-6">
-      <Tabs value={selectedAccount} className="w-full">
-      <TabsHeader
-        className="bg-black/50 rounded-lg"
+        <div className="flex justify-center space-x-2 md:space-x-4 mb-6">
+          <Tabs value={selectedAccount} className="w-full">
+            <TabsHeader
+              className="bg-black/50 rounded-lg"
+              indicatorProps={{
+                className: "bg-red-900/85 rounded-lg",
+              }}
+            >
+              <Tab 
+                value="account1"
+                onClick={() => setSelectedAccount("account1")}
+                className="text-gray-300 hover:text-white"
+              >
+                Account 1
+              </Tab>
+              <Tab 
+                value="account2"
+                onClick={() => setSelectedAccount("account2")}
+                className="text-gray-300 hover:text-white"
+              >
+                Account 2
+              </Tab>
+            </TabsHeader>
+          </Tabs>
+        </div>
 
-        indicatorProps={{
-          className: "bg-red-900/85 rounded-lg",
-        }}
-      >
-        <Tab 
-          value="account1"
-          onClick={() => setSelectedAccount("account1")}
-          className="text-gray-300 hover:text-white"
-        >
-          Account 1
-        </Tab>
-        <Tab 
-          value="account2"
-          onClick={() => setSelectedAccount("account2")}
-          className="text-gray-300 hover:text-white"
-        >
-          Account 2
-        </Tab>
-      </TabsHeader>
-    </Tabs>
-      </div>
+        <div className="mb-6">
+          {selectedAccount === "account1"
+            ? renderAccountDetails(accountNumber1, ifscCode1, imgUrl1)
+            : renderAccountDetails(accountNumber2, ifscCode2, imgUrl2)}
+        </div>
 
-      <div className="mb-6">
-        {selectedAccount === "account1"
-          ? renderAccountDetails(accountNumber1, ifscCode1, imgUrl1)
-          : renderAccountDetails(accountNumber2, ifscCode2, imgUrl2)}
-      </div>
-
-     <form onSubmit={handleSubmitDeposit} className="space-y-4 md:space-y-6">
+        <form onSubmit={handleSubmitDeposit} className="space-y-4 md:space-y-6">
         <input
           type="number"
           placeholder="Deposit Amount (₹)"
@@ -257,16 +274,57 @@ const DepositSection = () => {
       </form>
 
       <div className="mt-4 md:mt-6 p-3 md:p-4 bg-black/30 backdrop-blur-sm rounded-lg border border-gray-600">
-        <h3 className="text-base md:text-lg font-semibold text-white mb-2">Important Notes:</h3>
-        <ul className="space-y-1 md:space-y-2 text-sm md:text-base text-gray-300 list-disc pl-4 md:pl-5">
-          <li>Minimum deposit amount is ₹100</li>
-          <li>Please ensure to upload clear screenshots of your payment</li>
-          <li>Double-check transaction details before submitting</li>
-          <li>Deposits are typically processed within 24 hours</li>
-          <li>Contact support if deposit is not reflected after 1 day</li>
-        </ul>
+          <h3 className="text-base md:text-lg font-semibold text-white mb-2">Important Notes:</h3>
+          <ul className="space-y-1 md:space-y-2 text-sm md:text-base text-gray-300 list-disc pl-4 md:pl-5">
+            <li>Minimum deposit amount is ₹100</li>
+            <li>Please ensure to upload clear screenshots of your payment</li>
+            <li>Double-check transaction details before submitting</li>
+            <li>Deposits are typically processed within 24 hours</li>
+            <li>Contact support if deposit is not reflected after 1 day</li>
+          </ul>
+        </div>
       </div>
-    </div>
+
+      {/* QR Code Zoom Modal */}
+
+      {showZoomedQR && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={handleCloseZoom}
+        >
+          {/* Semi-transparent backdrop */}
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm"></div>
+          
+          {/* Modal Content */}
+          <div 
+            className="relative z-50 max-w-2xl w-full bg-white/5 rounded-xl p-4 transform transition-all duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={handleCloseZoom}
+              className="absolute -top-12 right-0 text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* QR Container */}
+            <div className="relative bg-white rounded-lg overflow-hidden">
+              <img
+                src={zoomedQRUrl}
+                alt="Zoomed QR Code"
+                className="w-full h-auto object-contain"
+              />
+            </div>
+
+            {/* Caption */}
+            <p className="text-white/70 text-center mt-4 text-sm">
+              Scan this QR code using any UPI app to make your payment
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

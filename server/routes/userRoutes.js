@@ -264,6 +264,7 @@ router.post('/deposit', async (req, res) => {
   try {
     const {
       userId,
+      name,
       depositAmount,
       transactionId,
       proofImgUrl,
@@ -288,6 +289,7 @@ router.post('/deposit', async (req, res) => {
     // Create deposit request
     const deposit = new Deposit({
       userId,
+      name,
       depositAmount,
       transactionId,
       proofImgUrl,

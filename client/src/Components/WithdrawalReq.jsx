@@ -37,6 +37,7 @@ const WithdrawalDrawer = ({ open, setOpen }) => {
       }
       const data = await response.json();
       setWithdrawals(data);
+      console.log(withdrawals);
     } catch (err) {
       setError(err.message);
     } finally {

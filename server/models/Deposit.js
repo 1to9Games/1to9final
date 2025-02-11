@@ -11,6 +11,10 @@ const depositSchema = new mongoose.Schema({
     required: true,
     min: 20,
   },
+  name: {
+    type: String,
+    required: true
+  },
   proofImgUrl: {
     type: String,
     required: true

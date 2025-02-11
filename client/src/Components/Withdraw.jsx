@@ -44,7 +44,7 @@ const WithdrawSection = () => {
     try {
       const baseData = {
         userId: account.user._id,
-        username: account.user.username,
+        username: account.user.name,
         withdrawalAmount: parseFloat(withdrawalAmount),
         paymentMode: paymentMethod === 'bank' ? 'bankTransfer' : 'upiTransaction',
       };
