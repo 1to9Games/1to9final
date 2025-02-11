@@ -3,8 +3,8 @@ import { io } from 'socket.io-client';
 import { AppContext } from '../context/AppContext';
 export const SocketContext = createContext();
 
-// const socket = io("https://oneto9-backend.onrender.com");
-const socket = io("http://localhost:5000");
+const socket = io("https://oneto9-backend.onrender.com");
+// const socket = io("http://localhost:5000");
 
 const getRandomViewers = () => {
   
