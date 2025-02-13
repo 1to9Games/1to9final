@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/bets', async (req, res) => {
     try {
-      const { userId, slotNumber, selectedNumber, betAmount } = req.body;
+      const { userId,username, slotNumber, selectedNumber, betAmount } = req.body;
 
 
       //taking gameId
@@ -44,6 +44,7 @@ router.post('/bets', async (req, res) => {
         userId,
         idOfGame,
         gameId:latestGame.gameId,
+        username,
         slotNumber,
         selectedNumber,
         betAmount,

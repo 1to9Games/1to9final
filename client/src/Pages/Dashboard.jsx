@@ -263,6 +263,7 @@ const Dashboard = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: account.user._id,
+          username:account.user.name,
           slotNumber: slotIndex + 1,
           selectedNumber,
           betAmount,

@@ -9,6 +9,10 @@ const betSchema = new mongoose.Schema({
   idOfGame: {
     type:  { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
   },
+  username:{
+    type: String,
+    required: true
+  },
   gameId:{
     type: String,
     required: true

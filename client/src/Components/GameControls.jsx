@@ -223,6 +223,9 @@ const GameControls = () => {
                 {bets.map((bet) => (
                   <ListItem key={bet.id} className="py-2 px-4 hover:bg-transparent hover:shadow-none focus:bg-transparent">
                     <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0">
+                    <Typography className="font-medium text-white">
+                        {bet.username}
+                      </Typography>
                       <Typography className="font-medium text-white">
                         {bet.userId}
                       </Typography>
