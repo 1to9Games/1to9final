@@ -127,12 +127,6 @@ const LoginComponent = () => {
           >
             Forgot Password?
           </Link>
-          <Link 
-            to="/admin-login" 
-            className="block w-full text-center text-xs md:text-sm text-gray-400 hover:text-red-200 transition-colors"
-          >
-            Admin Login
-          </Link>
         </div>
       </div>
     </div>

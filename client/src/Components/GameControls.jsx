@@ -14,6 +14,7 @@ import {
 import toast from 'react-hot-toast';
 import { SocketContext } from '../context/SocketContext';
 import { AppContext } from '../context/AppContext';
+import { format } from 'date-fns';
 
 const GameControls = () => {
   const [bets, setBets] = useState([]);
@@ -205,14 +206,12 @@ const GameControls = () => {
         <CardBody className="space-y-4 md:space-y-6 bg-transparent">
           {/* Current Bets Section */}
           <div className=' flex md:flex-row justify-between items-center'>
-            <Button
-              className="text-sm md:text-base py-2 md:py-3 bg-red-900 bg-opacity-80"
-              onClick= {() =>createGame() }>
-              Create New Game
-            </Button>
-            <div className='text-white'>
-              Today's Game ID: {todayGameId}
-            </div>
+            
+          <div className='flex flex-col items-center w-full'>
+            <span className='text-gray-300 text-md mb-1'>Today's Game ID:</span>
+            <span className='text-green-400 font-bold text-2xl'>{todayGameId}</span>
+          </div>
+            
           </div>
           <div>
             <Typography variant="h5" className="mb-2 md:mb-4 md:text-[2rem] text-white">
@@ -221,15 +220,18 @@ const GameControls = () => {
             <Card className="w-full h-[480px] overflow-y-scroll bg-black bg-opacity-50 my-4">
               <List>
                 {bets.map((bet) => (
-                  <ListItem key={bet.id} className="py-2 px-4 hover:bg-transparent hover:shadow-none focus:bg-transparent">
+                  <ListItem key={bet.id} className="py-2 px-4 hover:bg-transparent hover:shadow-none focus:bg-transparent  border-b border-gray-700/50">
                     <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0">
-                    <Typography className="font-medium text-white">
+                      <Typography className="font-medium text-white">
                         {bet.username}
                       </Typography>
                       <Typography className="font-medium text-white">
-                        {bet.userId}
+                        {format(new Date(bet.createdAt), 'dd/MM/yyyy hh:mm:ss a')}
                       </Typography>
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                        <Typography className="font-medium text-red-500">
+                          {bet.gameId}
+                        </Typography>
                         <Typography className="font-medium text-gray-400">
                           {timeSlots[bet.slotNumber - 1]}
                         </Typography>

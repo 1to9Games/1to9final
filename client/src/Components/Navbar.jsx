@@ -18,6 +18,7 @@ import {
 import WithdrawalDrawer from "./WithdrawalReq";
 import QRUploadDialog from "./QrUploadDialog";
 import DepositDialog from "./DepositDialog";
+import GameCreateDialog from "./GameCreateDialog";
 import { SocketContext } from '../context/SocketContext';
 import { AppContext } from "../context/AppContext";
 import logo from '../Pages/logo.png';
@@ -140,6 +141,34 @@ function DepositMenu() {
   );
 }
 
+function GameCreateMenu() {
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+  const handleDialogToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDialogOpen(!isDialogOpen);
+  };
+
+  return (
+    <div className="w-full">
+      <button 
+        onClick={handleDialogToggle}
+        className="flex w-full items-center gap-2 font-medium text-[1rem] text-white rounded-lg lg:rounded-full px-4 py-2 hover:bg-white/10 transition-colors"
+      >
+        <CubeTransparentIcon className="h-[20px] w-[20px] text-red-600" />
+        Create Game
+        <ChevronDownIcon strokeWidth={2} className="h-3 w-3 ml-auto lg:ml-0" />
+      </button>
+      
+      <GameCreateDialog open={isDialogOpen} handleOpen={setIsDialogOpen} />
+    </div>
+  );
+}
+
+
+
+
 function NavList() {
 
   const { setAdminAccount } = useContext(AppContext);
@@ -156,6 +185,7 @@ function NavList() {
       <WithdrawalMenu />
       <QrUploadMenu />
       <DepositMenu />
+      <GameCreateMenu />
       <ActiveUsersInput />
       <Button
       onClick={()=>handleLogout()}
